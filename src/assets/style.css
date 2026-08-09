@@ -1,0 +1,42 @@
+/* =====================================================================
+   Styles globaux — jetons de design partagés par toute l'application
+   ===================================================================== */
+
+:root {
+  --paper: #f1ecdf; /* papier clair : couleur des dépêches */
+  --paper-dark: #e2dac4; /* fond général, un ton plus soutenu */
+  --ink: #1e2430; /* encre / texte principal */
+  --ink-soft: #565c6b; /* texte secondaire */
+  --line: #b9af95; /* filets, pointillés */
+  --wire-blue: #2c4a75; /* tampon bleu */
+  --brass: #b9862f; /* tampon laiton */
+  --stamp-red: #a5341f; /* tampon rouge alerte */
+  --pine: #3f6b4e; /* tampon vert */
+  --radius: 2px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--paper-dark);
+  background-image: linear-gradient(var(--line) 1px, transparent 1px);
+  background-size: 100% 2.1em;
+  background-position: 0 5.6em;
+  color: var(--ink);
+  font-family: 'IBM Plex Sans', sans-serif;
+  min-height: 100vh;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
