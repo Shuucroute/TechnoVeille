@@ -4,10 +4,34 @@ import { nettoyerExtrait } from '../utils/formatage.js'
 
 const POINT_API = 'https://api.rss2json.com/v1/api.json?rss_url='
 
-const CLE_API = 'gicigeecfrrwer42ygkpv1jd11ii2d1glcigx5zb'
+const CLE_API = import.meta.env.VITE_API_KEY
+
+const CLE_STOCKAGE = 'telex-flux-utilisateur'
+
+// Relit la liste de flux sauvegardée dans le navigateur, ou renvoie les flux par défaut
+function chargerFluxSauvegardes() {
+  try {
+    const brut = localStorage.getItem(CLE_STOCKAGE)
+    if (!brut) return [...FLUX_PAR_DEFAUT]
+    const parse = JSON.parse(brut)
+    if (!Array.isArray(parse) || parse.length === 0) return [...FLUX_PAR_DEFAUT]
+    return parse
+  } catch (erreur) {
+    console.error('Lecture du stockage local impossible', erreur)
+    return [...FLUX_PAR_DEFAUT]
+  }
+}
+
+function sauvegarderFlux(liste) {
+  try {
+    localStorage.setItem(CLE_STOCKAGE, JSON.stringify(liste))
+  } catch (erreur) {
+    console.error('Écriture du stockage local impossible', erreur)
+  }
+}
 
 export function useFlux() {
-  const flux = ref([...FLUX_PAR_DEFAUT])
+  const flux = ref(chargerFluxSauvegardes())
   const articles = ref([])
   const enChargement = ref(false)
   const fluxEnEchec = ref(0)
@@ -61,11 +85,13 @@ export function useFlux() {
   function ajouterFlux(nom, url) {
     if (flux.value.some((f) => f.url === url)) return
     flux.value.push({ nom, url })
+    sauvegarderFlux(flux.value)
     actualiserTout()
   }
 
   function retirerFlux(index) {
     flux.value.splice(index, 1)
+    sauvegarderFlux(flux.value)
     actualiserTout()
   }
 

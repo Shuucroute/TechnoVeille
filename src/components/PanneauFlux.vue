@@ -34,7 +34,7 @@ function soumettreFormulaire() {
       <input
         v-model="champUrl"
         type="text"
-        placeholder="https://exemple.com/feed.xml"
+        placeholder="https://exemple.com/feed.xml ou https://exemple.com/rss.xml"
         autocomplete="off"
         required
       />

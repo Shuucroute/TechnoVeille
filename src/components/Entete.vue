@@ -15,7 +15,7 @@ onUnmounted(() => clearInterval(intervalle))
 <template>
   <header class="station">
     <div>
-      <h1><span class="pastille"></span> Station d'écoute — Veille Techno</h1>
+      <h1><span class="pastille"></span> Veille Techno</h1>
     </div>
     <div class="horloge">{{ heure }}</div>
   </header>
