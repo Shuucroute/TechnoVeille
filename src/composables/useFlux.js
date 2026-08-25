@@ -1,5 +1,4 @@
 import { ref } from 'vue'
-import { FLUX_PAR_DEFAUT } from '../data/fluxSuggeres.js'
 import { nettoyerExtrait } from '../utils/formatage.js'
 
 const POINT_API = 'https://api.rss2json.com/v1/api.json?rss_url='
@@ -8,17 +7,17 @@ const CLE_API = import.meta.env.VITE_API_KEY
 
 const CLE_STOCKAGE = 'telex-flux-utilisateur'
 
-// Relit la liste de flux sauvegardée dans le navigateur, ou renvoie les flux par défaut
+// Relit la liste de flux sauvegardée dans le navigateur, ou renvoie une liste vide
 function chargerFluxSauvegardes() {
   try {
     const brut = localStorage.getItem(CLE_STOCKAGE)
-    if (!brut) return [...FLUX_PAR_DEFAUT]
+    if (!brut) return []
     const parse = JSON.parse(brut)
-    if (!Array.isArray(parse) || parse.length === 0) return [...FLUX_PAR_DEFAUT]
+    if (!Array.isArray(parse)) return []
     return parse
   } catch (erreur) {
     console.error('Lecture du stockage local impossible', erreur)
-    return [...FLUX_PAR_DEFAUT]
+    return []
   }
 }
 
