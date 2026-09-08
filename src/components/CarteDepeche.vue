@@ -1,11 +1,31 @@
 <script setup>
+import { ref } from 'vue'
 import { formaterDate } from '../utils/formatage.js'
+import { rechercherFactChecks, factCheckDisponible } from '../utils/factCheck.js'
 
-defineProps({
+const props = defineProps({
   article: { type: Object, required: true },
   couleur: { type: String, required: true },
   categorie: { type: Object, default: null },
+  confiance: { type: Object, default: null },
 })
+
+// etat : 'inactif' | 'chargement' | 'ok' | 'erreur'
+const factCheck = ref({ etat: 'inactif', resultats: [], message: '' })
+
+async function lancerRechercheFactCheck() {
+  factCheck.value = { etat: 'chargement', resultats: [], message: '' }
+  try {
+    const resultats = await rechercherFactChecks(props.article.titre)
+    factCheck.value = { etat: 'ok', resultats, message: '' }
+  } catch (erreur) {
+    const message =
+      erreur.code === 'AUCUNE_CLE'
+        ? "Recherche désactivée : aucune clé d'API Fact Check configurée pour ce site."
+        : 'Recherche impossible pour le moment (réseau ou quota API).'
+    factCheck.value = { etat: 'erreur', resultats: [], message }
+  }
+}
 </script>
 
 <template>
@@ -25,6 +45,44 @@ defineProps({
       </span>
     </div>
     <p class="extrait">{{ article.extrait }}</p>
+    <div
+      v-if="confiance"
+      class="confiance"
+      :class="'confiance--' + confiance.niveau"
+      :title="'Score indicatif (non factuel) : ' + confiance.raisons.join(' · ')"
+    >
+      <span class="confiance-point" aria-hidden="true"></span>
+      {{ confiance.libelle }} · {{ confiance.score }}%
+      <span class="sr-only"> — {{ confiance.raisons.join(', ') }}</span>
+    </div>
+
+    <div class="fact-check">
+      <button
+        v-if="factCheck.etat === 'inactif' || factCheck.etat === 'erreur'"
+        type="button"
+        class="bouton-factcheck"
+        @click="lancerRechercheFactCheck"
+      >
+        Chercher des fact-checks liés
+      </button>
+      <p v-if="factCheck.etat === 'chargement'" class="factcheck-msg">Recherche en cours…</p>
+      <p v-else-if="factCheck.etat === 'erreur'" class="factcheck-msg factcheck-msg--erreur">
+        {{ factCheck.message }}
+      </p>
+      <template v-else-if="factCheck.etat === 'ok'">
+        <p class="factcheck-note">
+          Sujets proches déjà vérifiés par des organismes indépendants — ne certifie pas cet article précis.
+        </p>
+        <ul v-if="factCheck.resultats.length" class="factcheck-liste">
+          <li v-for="(r, i) in factCheck.resultats" :key="i">
+            <a :href="r.url" target="_blank" rel="noopener noreferrer">
+              <strong>{{ r.evaluateur }}</strong> : {{ r.verdict }}
+            </a>
+          </li>
+        </ul>
+        <p v-else class="factcheck-msg">Aucun fact-check publié trouvé sur un sujet proche.</p>
+      </template>
+    </div>
   </article>
 </template>
 
@@ -124,5 +182,80 @@ h3 a:hover {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.confiance {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  align-self: flex-start;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--couleur-confiance);
+  cursor: help;
+}
+.confiance-point {
+  width: 0.55em;
+  height: 0.55em;
+  border-radius: 50%;
+  background: var(--couleur-confiance);
+  flex-shrink: 0;
+}
+.confiance--fort {
+  --couleur-confiance: var(--pine);
+}
+.confiance--moyen {
+  --couleur-confiance: var(--brass);
+}
+.confiance--faible {
+  --couleur-confiance: var(--ink-soft);
+}
+
+.fact-check {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.68rem;
+}
+
+.bouton-factcheck {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.68rem;
+  background: transparent;
+  color: var(--wire-blue);
+  border: 1px solid var(--wire-blue);
+  border-radius: var(--radius);
+  padding: 0.3em 0.6em;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.bouton-factcheck:hover {
+  background: var(--wire-blue);
+  color: var(--paper, #fff);
+}
+
+.factcheck-msg {
+  margin: 0.4em 0 0;
+  color: var(--ink-soft);
+}
+.factcheck-msg--erreur {
+  color: var(--stamp-red);
+}
+
+.factcheck-note {
+  margin: 0.4em 0 0.3em;
+  color: var(--ink-soft);
+  font-style: italic;
+}
+
+.factcheck-liste {
+  margin: 0;
+  padding-left: 1.1em;
+}
+.factcheck-liste a {
+  color: var(--ink);
+}
+.factcheck-liste a:hover {
+  text-decoration-color: var(--brass);
 }
 </style>

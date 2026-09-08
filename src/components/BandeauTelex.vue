@@ -15,7 +15,7 @@ const texte = computed(() => {
 </script>
 
 <template>
-  <div class="telex">
+  <div class="telex" aria-hidden="true">
     <span class="piste">{{ texte }}</span>
   </div>
 </template>

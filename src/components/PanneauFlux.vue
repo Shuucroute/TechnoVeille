@@ -1,18 +1,31 @@
 <script setup>
 import { ref } from 'vue'
 import { couleurPour } from '../data/palette.js'
+import { estUrlValide } from '../composables/useFlux.js'
 import ChipFlux from './ChipFlux.vue'
 
-defineProps({
+const props = defineProps({
   flux: { type: Array, required: true },
+  fluxEnEchecUrls: { type: Set, default: () => new Set() },
 })
 const emit = defineEmits(['ajouter', 'retirer'])
 
 const champUrl = ref('')
+const messageErreur = ref('')
 
 function soumettreFormulaire() {
   const url = champUrl.value.trim()
   if (!url) return
+
+  if (!estUrlValide(url)) {
+    messageErreur.value = "Cette adresse ne ressemble pas à une URL valide (elle doit commencer par http:// ou https://)."
+    return
+  }
+
+  if (props.flux.some((f) => f.url === url)) {
+    messageErreur.value = 'Ce flux est déjà en écoute.'
+    return
+  }
 
   let nom
   try {
@@ -21,6 +34,7 @@ function soumettreFormulaire() {
     nom = url
   }
 
+  messageErreur.value = ''
   emit('ajouter', { nom, url })
   champUrl.value = ''
 }
@@ -30,16 +44,19 @@ function soumettreFormulaire() {
   <div class="panneau">
     <h2>Ajouter un flux RSS</h2>
 
-    <form @submit.prevent="soumettreFormulaire">
+    <form @submit.prevent="soumettreFormulaire" novalidate>
       <input
         v-model="champUrl"
         type="text"
         placeholder="https://exemple.com/feed.xml ou https://exemple.com/rss.xml"
         autocomplete="off"
+        :aria-invalid="Boolean(messageErreur)"
         required
+        @input="messageErreur = ''"
       />
       <button type="submit">Mettre en écoute</button>
     </form>
+    <p v-if="messageErreur" class="erreur" role="alert">{{ messageErreur }}</p>
 
     <div class="chips">
       <ChipFlux
@@ -47,6 +64,7 @@ function soumettreFormulaire() {
         :key="f.url"
         :nom="f.nom"
         :couleur="couleurPour(i)"
+        :en-echec="fluxEnEchecUrls.has(f.url)"
         @retirer="emit('retirer', i)"
       />
     </div>
@@ -115,5 +133,16 @@ button[type='submit']:focus-visible {
   display: flex;
   gap: 0.5em;
   flex-wrap: wrap;
+}
+
+.erreur {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.78rem;
+  color: var(--stamp-red);
+  margin: 0.5em 0 0;
+}
+
+input[type='text'][aria-invalid='true'] {
+  border-color: var(--stamp-red);
 }
 </style>

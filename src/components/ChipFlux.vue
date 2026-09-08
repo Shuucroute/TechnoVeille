@@ -2,14 +2,21 @@
 defineProps({
   nom: { type: String, required: true },
   couleur: { type: String, required: true },
+  enEchec: { type: Boolean, default: false },
 })
 defineEmits(['retirer'])
 </script>
 
 <template>
-  <span class="chip">
+  <span class="chip" :class="{ echec: enEchec }">
     <span class="pastille-source" :style="{ background: couleur }"></span>
     {{ nom }}
+    <span
+      v-if="enEchec"
+      class="alerte"
+      title="Ce flux est injoignable pour l'instant (URL invalide, CORS, ou flux indisponible)"
+      aria-label="Flux injoignable"
+    >⚠</span>
     <button title="Retirer ce flux" @click="$emit('retirer')">×</button>
   </span>
 </template>
@@ -31,6 +38,14 @@ defineEmits(['retirer'])
   height: 0.6em;
   border-radius: 50%;
   flex-shrink: 0;
+}
+.chip.echec {
+  border-color: var(--stamp-red);
+}
+.alerte {
+  color: var(--stamp-red);
+  font-size: 0.85em;
+  line-height: 1;
 }
 button {
   background: none;

@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
 import { useFlux } from './composables/useFlux.js'
+import { calculerScoresConfiance } from './utils/confiance.js'
 import Entete from './components/Entete.vue'
 import BandeauTelex from './components/BandeauTelex.vue'
 import PanneauFlux from './components/PanneauFlux.vue'
@@ -10,7 +11,7 @@ const {
   flux,
   articles,
   enChargement,
-  fluxEnEchec,
+  fluxEnEchecUrls,
   derniereActualisation,
   actualiserTout,
   ajouterFlux,
@@ -54,6 +55,10 @@ const articlesFiltres = computed(() => {
     )
   )
 })
+
+// Calculé sur la liste COMPLÈTE (avant filtre de recherche) pour ne pas
+// perdre de recoupements entre sources quand l'utilisateur filtre l'affichage
+const scoresConfiance = computed(() => calculerScoresConfiance(articles.value))
 </script>
 
 <template>
@@ -85,6 +90,7 @@ const articlesFiltres = computed(() => {
 
   <PanneauFlux
     :flux="flux"
+    :flux-en-echec-urls="fluxEnEchecUrls"
     @ajouter="({ nom, url }) => ajouterFlux(nom, url)"
     @retirer="retirerFlux"
   />
@@ -93,8 +99,9 @@ const articlesFiltres = computed(() => {
     :articles="articlesFiltres"
     :flux="flux"
     :en-chargement="enChargement"
-    :flux-en-echec="fluxEnEchec"
+    :flux-en-echec="fluxEnEchecUrls.size"
     :derniere-actualisation="derniereActualisation"
+    :scores-confiance="scoresConfiance"
   />
 
   <footer>

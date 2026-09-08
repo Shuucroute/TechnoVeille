@@ -1,7 +1,8 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { couleurPour } from '../data/palette.js'
 import { CATEGORIES, detecterCategorie } from '../data/categories.js'
+import { cleArticle } from '../utils/confiance.js'
 import CarteDepeche from './CarteDepeche.vue'
 
 const props = defineProps({
@@ -10,6 +11,7 @@ const props = defineProps({
   enChargement: { type: Boolean, default: false },
   fluxEnEchec: { type: Number, default: 0 },
   derniereActualisation: { type: Date, default: null },
+  scoresConfiance: { type: Map, default: () => new Map() },
 })
 
 // Chaque article enrichi de sa catégorie détectée (ou null si aucune ne correspond)
@@ -32,8 +34,26 @@ const articlesFiltres = computed(() => {
   return articlesAvecCategorie.value.filter((a) => a.categorie?.id === filtreActif.value)
 })
 
-// Limite d'affichage pour rester léger visuellement
-const articlesAffiches = computed(() => articlesFiltres.value.slice(0, 60))
+// Limite d'affichage pour rester léger visuellement, avec un bouton pour en voir plus
+const PAR_PAGE = 60
+const nombreAffiche = ref(PAR_PAGE)
+const articlesAffiches = computed(() => articlesFiltres.value.slice(0, nombreAffiche.value))
+const ilResteDesArticles = computed(() => articlesFiltres.value.length > nombreAffiche.value)
+
+function voirPlus() {
+  nombreAffiche.value += PAR_PAGE
+}
+
+// On revient à la première page à chaque changement de filtre ou d'arrivée de nouvelles dépêches
+watch(filtreActif, () => {
+  nombreAffiche.value = PAR_PAGE
+})
+watch(
+  () => props.articles,
+  () => {
+    nombreAffiche.value = PAR_PAGE
+  },
+)
 
 function couleurSource(nomSource) {
   const index = props.flux.findIndex((f) => f.nom === nomSource)
@@ -52,7 +72,7 @@ const messageEtat = computed(() => {
 
 <template>
   <main>
-    <div class="etat">{{ messageEtat }}</div>
+    <div class="etat" role="status" aria-live="polite">{{ messageEtat }}</div>
 
     <div class="onglets" v-if="categoriesPresentes.length">
       <button
@@ -87,8 +107,13 @@ const messageEtat = computed(() => {
         :article="item.article"
         :couleur="couleurSource(item.article.source)"
         :categorie="item.categorie"
+        :confiance="scoresConfiance.get(cleArticle(item.article))"
       />
     </div>
+
+    <button v-if="ilResteDesArticles" type="button" class="voir-plus" @click="voirPlus">
+      Voir plus de dépêches
+    </button>
   </main>
 </template>
 
@@ -143,5 +168,26 @@ main {
   color: var(--ink-soft);
   padding: 2em 0;
   text-align: center;
+}
+
+.voir-plus {
+  display: block;
+  margin: 2em auto 0;
+  font-family: 'Oswald', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--ink);
+  padding: 0.6em 1.4em;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.voir-plus:hover {
+  background: var(--ink);
+  color: var(--paper, #fff);
 }
 </style>
